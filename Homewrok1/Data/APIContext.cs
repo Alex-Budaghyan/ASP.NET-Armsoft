@@ -5,7 +5,7 @@ namespace Homewrok1.Data
 {
     public class APIContext(DbContextOptions<APIContext> options) : DbContext(options)
     {
-        public DbSet<Post> Posts { get; set; }
-        public DbSet<User>  Users { get; set; }
+        public DbSet<Post>? Posts { get; set; }
+        public DbSet<User>? Users { get; set; }
     }
 }

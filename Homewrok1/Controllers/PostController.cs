@@ -6,75 +6,43 @@ namespace Homewrok1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PostController(APIContext context) : Controller
+    public class PostController(JsonPlaceholderClient client) : ControllerBase
     {
-        private readonly APIContext  _context = context; 
-
-        [HttpGet]
-        public IActionResult GetPost(int id, string title)
-        {
-            var result = _context.Posts.FirstOrDefault(p => p.Id == id && p.Title == title);
-            
-            return result is null ? NotFound() : Ok(result);
-        }
+        private readonly JsonPlaceholderClient _client = client;
 
         [HttpGet("{id}")]
-        public IActionResult GetPost(int id)
+        public async Task<IActionResult> GetPostById(int id)
         {
-            var result = _context.Posts.Find(id);
+            var post = await _client.GetPostById(id);
+            return post == null ? NotFound() : Ok(post);
+        }
 
-            return result is null ? NotFound() : Ok(result);
+        [HttpGet("search")]
+        public async Task<IActionResult> GetPostByUserAndTitle([FromQuery] int userId, [FromQuery] string title)
+        {
+            var post = await _client.GetPostByUserAndTitle(userId, title);
+            return post == null ? NotFound() : Ok(post);
         }
 
         [HttpPost]
-        public IActionResult CreatePost(Post post)
+        public async Task<IActionResult> CreatePost([FromBody] Post post)
         {
-            if (post.Id == 0)
-            {
-                _context.Posts.Add(post);
-            }
-            else
-            {
-                var postInDB = _context.Posts.Find(post.Id);
-
-                if (postInDB is null)
-                {
-                    return new JsonResult(NotFound());
-                }
-            }
-
-            _context.SaveChanges();
-
-            return Ok(post);
+            var created = await _client.CreatePost(post);
+            return created == null ? BadRequest("Failed to create post.") : CreatedAtAction(nameof(GetPostById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdatePost(int id, Post updatedPost)
+        public async Task<IActionResult> UpdatePost(int id, [FromBody] Post updated)
         {
-            var postDb = _context.Posts.Find(id);
-            if (postDb is null)
-                return new JsonResult(NotFound());
-
-            postDb.UserID = updatedPost.UserID;
-            postDb.Title = updatedPost.Title;
-            postDb.Body = updatedPost.Body;
-
-            _context.SaveChanges();
-            return Ok(postDb);
+            var result = await _client.UpdatePost(id, updated);
+            return result == null ? NotFound() : Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeletePost(int id)
+        public async Task<IActionResult> DeletePost(int id)
         {
-            var postDb = _context.Posts.Find(id);
-            if (postDb is not null)
-            {
-                _context.Posts.Remove(postDb);
-                _context.SaveChanges();
-            }
-
-            return NoContent();
+            var success = await _client.DeletePost(id);
+            return success ? NoContent() : NotFound();
         }
-
     }
 }
