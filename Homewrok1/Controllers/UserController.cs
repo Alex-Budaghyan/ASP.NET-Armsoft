@@ -1,77 +1,61 @@
-﻿using Homewrok1.Data;
+﻿using Homework1;
+using Homework1.Models;
 using Homewrok1.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Homewrok1.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
-    public class UserController(APIContext context) : Controller
+    public class UserController(ReqResClient client, ILogger<UserController> logger) : ControllerBase
     {
-        private readonly APIContext _context = context;
+        private readonly ReqResClient _client = client;
+        private readonly ILogger<UserController> _logger = logger;
 
-        [HttpGet]
-        public IActionResult GetUser(int id)
+        private static readonly List<UserForm> _users = [];
+
+        [HttpPost]
+        public IActionResult SaveUser(UserForm user)
         {
-            var result = _context.Users.Find(id);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            if (_users.Any(u => u.Username.Equals(user.Username, StringComparison.OrdinalIgnoreCase)))
+                return BadRequest(new { message = "A user with that username already exists." });
+
+            _users.Add(user);
+
+            _logger.LogInformation("User '{Username}' was created successfully at {Time}.", user.Username, DateTime.UtcNow);
+
+            return Ok(new { message = "User saved successfully." });
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUser(int id)
+        {
+            var result = await _client.GetUser(id);
             return result is null ? NotFound() : Ok(result);
         }
 
         [HttpPost]
-        public IActionResult PostUser(User user)
+        public async Task<IActionResult> CreateUser(User user)
         {
-            if (user.Id == 0)
-            {
-                _context.Users.Add(user);
-            }
-            else
-            {
-                var userInDB = _context.Posts.Find(user.Id);
-
-                if (userInDB is null)
-                {
-                    return NotFound();
-                }
-            }
-
-            _context.SaveChanges();
-
-            return Ok(user);
+            var result = await _client.CreateUser(user);
+            return result is null ? BadRequest() : Ok(result);
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, User updatedUser)
+        public async Task<IActionResult> UpdateUser(int id, User updatedUser)
         {
-            var userDb = _context.Users.Find(id);
-
-            if (userDb is null)
-            {
-                return NotFound();
-            }
-
-            userDb.FirstName = updatedUser.FirstName;
-            userDb.LastName = updatedUser.LastName;
-            userDb.Email = updatedUser.Email;
-            userDb.Avatar = updatedUser.Avatar;
-
-            _context.SaveChanges();
-            
-            return Ok(userDb);
+            var result = await _client.UpdateUser(id, updatedUser);
+            return result is null ? NotFound() : Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            var userInDB = _context.Users.Find(id);
-
-            if (userInDB is not null)
-            {
-                _context.Users.Remove(userInDB);
-                _context.SaveChanges();
-            }
-
-            return NoContent();
+            var success = await _client.DeleteUser(id);
+            return success ? NoContent() : NotFound();
         }
     }
 }

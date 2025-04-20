@@ -1,5 +1,5 @@
-using Homewrok1.Data;
-using Microsoft.EntityFrameworkCore;
+using Homework1;
+using Serilog;
 
 namespace Homewrok1
 {
@@ -7,19 +7,38 @@ namespace Homewrok1
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(
+                    "Logs/log-.txt",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+                )
+                .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddDbContext<APIContext>(option => option.UseInMemoryDatabase("PostsDB"));
+            builder.Host.UseSerilog();
+
+            // Add services to the container
+            builder.Services.AddHttpClient<JsonPlaceholderClient>((sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                client.BaseAddress = new Uri(config["JsonPlaceholder:BaseUrl"]);
+            });
+
+            builder.Services.AddHttpClient<ReqResClient>((sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                client.BaseAddress = new Uri(config["ReqRes:BaseUrl"]);
+            });
 
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -27,9 +46,7 @@ namespace Homewrok1
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
 
             app.MapControllers();
 
