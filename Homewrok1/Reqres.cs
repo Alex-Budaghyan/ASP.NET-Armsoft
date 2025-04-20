@@ -1,6 +1,6 @@
 ﻿using Homewrok1.Models;
 
-namespace Homework1.Data
+namespace Homework1
 {
     public class ReqResClient
     {

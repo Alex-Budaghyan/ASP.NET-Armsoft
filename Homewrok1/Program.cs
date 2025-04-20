@@ -1,21 +1,30 @@
-using Homework1.Data;
-using Homewrok1;
+using Homework1;
+using Serilog;
 
-namespace Homework1
+namespace Homewrok1
 {
     public class Program
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(
+                    "Logs/log-.txt",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+                )
+                .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            builder.Host.UseSerilog();
 
+            // Add services to the container
             builder.Services.AddHttpClient<JsonPlaceholderClient>((sp, client) =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
-                var baseUrl = config["JsonPlaceholder:BaseUrl"];
-                client.BaseAddress = new Uri(baseUrl);
+                client.BaseAddress = new Uri(config["JsonPlaceholder:BaseUrl"]);
             });
 
             builder.Services.AddHttpClient<ReqResClient>((sp, client) =>
@@ -24,31 +33,23 @@ namespace Homework1
                 client.BaseAddress = new Uri(config["ReqRes:BaseUrl"]);
             });
 
-
-            // Add controllers
             builder.Services.AddControllers();
-
-            // Add Swagger for API documentation
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            // Use HTTPS redirection and authorization
             app.UseHttpsRedirection();
             app.UseAuthorization();
 
-            // Map controllers
             app.MapControllers();
 
-            // Run the application
             app.Run();
         }
     }
