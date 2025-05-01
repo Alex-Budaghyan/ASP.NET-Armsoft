@@ -1,4 +1,7 @@
 ﻿using Homewrok1.Models;
+using Homewrok1.Options;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace Homewrok1
 {
@@ -6,9 +9,10 @@ namespace Homewrok1
     {
         private readonly HttpClient _http;
 
-        public JsonPlaceholderClient(HttpClient http)
+        public JsonPlaceholderClient(HttpClient http, IOptions<JsonPlaceholderOptions> options)
         {
             _http = http;
+            _http.BaseAddress = new Uri(options.Value.BaseUrl);
         }
 
         public async Task<Post?> GetPostById(int id) =>
@@ -16,8 +20,15 @@ namespace Homewrok1
 
         public async Task<Post?> GetPostByUserAndTitle(int userId, string title)
         {
-            var posts = await _http.GetFromJsonAsync<List<Post>>($"posts?userId={userId}");
-            return posts?.FirstOrDefault(p => p.Title == title);
+            var query = new Dictionary<string, string?>
+            {
+                ["userId"] = userId.ToString(),
+                ["title"] = title
+            };
+
+            var url = QueryHelpers.AddQueryString("posts", query);
+            var posts = await _http.GetFromJsonAsync<List<Post>>(url);
+            return posts?.FirstOrDefault();
         }
 
         public async Task<Post?> CreatePost(Post post)

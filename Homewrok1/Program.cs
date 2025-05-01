@@ -1,5 +1,6 @@
 using Homework1.Data;
 using Homewrok1;
+using Homewrok1.Options;
 
 namespace Homework1
 {
@@ -10,21 +11,14 @@ namespace Homework1
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.Configure<ReqResOptions>(
+                builder.Configuration.GetSection("ReqRes"));
 
-            builder.Services.AddHttpClient<JsonPlaceholderClient>((sp, client) =>
-            {
-                var config = sp.GetRequiredService<IConfiguration>();
-                var baseUrl = config["JsonPlaceholder:BaseUrl"];
-                client.BaseAddress = new Uri(baseUrl);
-            });
+            builder.Services.Configure<JsonPlaceholderOptions>(
+                builder.Configuration.GetSection("JsonPlaceholder"));
 
-            builder.Services.AddHttpClient<ReqResClient>((sp, client) =>
-            {
-                var config = sp.GetRequiredService<IConfiguration>();
-                client.BaseAddress = new Uri(config["ReqRes:BaseUrl"]);
-            });
-
-
+            builder.Services.AddHttpClient<ReqResClient>();
+            builder.Services.AddHttpClient<JsonPlaceholderClient>();
             // Add controllers
             builder.Services.AddControllers();
 

@@ -1,4 +1,6 @@
 ﻿using Homewrok1.Models;
+using Homewrok1.Options;
+using Microsoft.Extensions.Options;
 
 namespace Homework1.Data
 {
@@ -6,9 +8,10 @@ namespace Homework1.Data
     {
         private readonly HttpClient _http;
 
-        public ReqResClient(HttpClient http)
+        public ReqResClient(HttpClient http, IOptions<ReqResOptions> options)
         {
             _http = http;
+            _http.BaseAddress = new Uri(options.Value.BaseUrl);
         }
 
         public async Task<User?> GetUser(int id)
@@ -19,16 +22,15 @@ namespace Homework1.Data
 
         public async Task<User?> CreateUser(User user)
         {
-            var response = await _http.PostAsJsonAsync("api/users", user);
-            var created = await response.Content.ReadFromJsonAsync<SingleUserResponse>();
-            return created?.Data;
+            var response = await _http.PostAsJsonAsync("api/User", user);
+            return await response.Content.ReadFromJsonAsync<User>();
         }
 
         public async Task<User?> UpdateUser(int id, User user)
         {
             var response = await _http.PutAsJsonAsync($"api/users/{id}", user);
-            var updated = await response.Content.ReadFromJsonAsync<SingleUserResponse>();
-            return updated?.Data;
+            return await response.Content.ReadFromJsonAsync<User>();
+
         }
 
         public async Task<bool> DeleteUser(int id)

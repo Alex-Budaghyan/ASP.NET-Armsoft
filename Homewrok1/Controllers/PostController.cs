@@ -1,5 +1,4 @@
-﻿using Homewrok1.Data;
-using Homewrok1.Models;
+﻿using Homewrok1.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Homewrok1.Controllers
@@ -28,7 +27,7 @@ namespace Homewrok1.Controllers
         public async Task<IActionResult> CreatePost([FromBody] Post post)
         {
             var created = await _client.CreatePost(post);
-            return created == null ? BadRequest("Failed to create post.") : CreatedAtAction(nameof(GetPostById), new { id = created.Id }, created);
+            return created is null ? BadRequest("Failed to create post.") : CreatedAtAction(nameof(GetPostById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
@@ -41,8 +40,8 @@ namespace Homewrok1.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(int id)
         {
-            var success = await _client.DeletePost(id);
-            return success ? NoContent() : NotFound();
+           await _client.DeletePost(id);
+            return NoContent();
         }
     }
 }
