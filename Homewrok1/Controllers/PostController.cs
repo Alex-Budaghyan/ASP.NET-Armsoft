@@ -10,35 +10,35 @@ namespace Homewrok1.Controllers
         private readonly JsonPlaceholderClient _client = client;
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetPostById(int id)
+        public async Task<ActionResult> GetPostById(int id)
         {
             var post = await _client.GetPostById(id);
             return post == null ? NotFound() : Ok(post);
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> GetPostByUserAndTitle([FromQuery] int userId, [FromQuery] string title)
+        public async Task<ActionResult> GetPostByUserAndTitle([FromQuery] int userId, [FromQuery] string title)
         {
             var post = await _client.GetPostByUserAndTitle(userId, title);
             return post == null ? NotFound() : Ok(post);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreatePost([FromBody] Post post)
+        public async Task<ActionResult> CreatePost([FromBody] Post post)
         {
             var created = await _client.CreatePost(post);
             return created is null ? BadRequest("Failed to create post.") : CreatedAtAction(nameof(GetPostById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePost(int id, [FromBody] Post updated)
+        public async Task<ActionResult> UpdatePost(int id, [FromBody] Post updated)
         {
             var result = await _client.UpdatePost(id, updated);
             return result == null ? NotFound() : Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePost(int id)
+        public async Task<ActionResult> DeletePost(int id)
         {
            await _client.DeletePost(id);
             return NoContent();
