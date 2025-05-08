@@ -5,7 +5,7 @@ namespace Homewrok1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PostController(JsonPlaceholderClient client) : ControllerBase
+    public class PostsController(JsonPlaceholderClient client) : ControllerBase
     {
         private readonly JsonPlaceholderClient _client = client;
 
