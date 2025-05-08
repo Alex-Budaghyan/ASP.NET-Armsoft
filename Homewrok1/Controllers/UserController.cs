@@ -1,77 +1,40 @@
-﻿using Homewrok1.Data;
+﻿using Homework1.Data;
 using Homewrok1.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Homewrok1.Controllers
+namespace Homewrok1.Controllers;
+
+[Route("[controller]")]
+[ApiController]
+public class UsersController(ReqResClient client) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UserController(APIContext context) : Controller
+    private readonly ReqResClient _client = client;
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult> GetUser(int id)
     {
-        private readonly APIContext _context = context;
+        var result = await _client.GetUser(id);
+        return result is null ? NotFound() : Ok(result);
+    }
 
-        [HttpGet]
-        public IActionResult GetUser(int id)
-        {
-            var result = _context.Users.Find(id);
+    [HttpPost]
+    public async Task<ActionResult> CreateUser([FromBody] User user)
+    {
+        var result = await _client.CreateUser(user);
+        return result is null ? BadRequest("Failed to create user.") : CreatedAtAction(nameof(GetUser), new { id = result.Id }, result);
+    }
 
-            return result is null ? NotFound() : Ok(result);
-        }
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateUser(int id, [FromBody] User updatedUser)
+    {
+        var result = await _client.UpdateUser(id, updatedUser);
+        return result is null ? NotFound() : Ok(result);
+    }
 
-        [HttpPost]
-        public IActionResult PostUser(User user)
-        {
-            if (user.Id == 0)
-            {
-                _context.Users.Add(user);
-            }
-            else
-            {
-                var userInDB = _context.Posts.Find(user.Id);
-
-                if (userInDB is null)
-                {
-                    return NotFound();
-                }
-            }
-
-            _context.SaveChanges();
-
-            return Ok(user);
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult UpdateUser(int id, User updatedUser)
-        {
-            var userDb = _context.Users.Find(id);
-
-            if (userDb is null)
-            {
-                return NotFound();
-            }
-
-            userDb.FirstName = updatedUser.FirstName;
-            userDb.LastName = updatedUser.LastName;
-            userDb.Email = updatedUser.Email;
-            userDb.Avatar = updatedUser.Avatar;
-
-            _context.SaveChanges();
-            
-            return Ok(userDb);
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult DeleteUser(int id)
-        {
-            var userInDB = _context.Users.Find(id);
-
-            if (userInDB is not null)
-            {
-                _context.Users.Remove(userInDB);
-                _context.SaveChanges();
-            }
-
-            return NoContent();
-        }
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteUser(int id)
+    {
+        await _client.DeleteUser(id);
+        return NoContent();
     }
 }
