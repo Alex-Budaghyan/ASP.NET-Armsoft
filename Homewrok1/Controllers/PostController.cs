@@ -40,7 +40,7 @@ namespace Homewrok1.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeletePost(int id)
         {
-           await _client.DeletePost(id);
+            await _client.DeletePost(id);
             return NoContent();
         }
     }
