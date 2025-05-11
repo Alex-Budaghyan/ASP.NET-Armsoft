@@ -1,6 +1,8 @@
 using Homework1.Data;
 using Homewrok1;
 using Homewrok1.Options;
+using Microsoft.AspNetCore.Diagnostics;
+using Serilog;
 
 namespace Homework1
 {
@@ -8,9 +10,15 @@ namespace Homework1
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            builder.Host.UseSerilog();
+
             builder.Services.Configure<ReqResOptions>(
                 builder.Configuration.GetSection("ReqRes"));
 
@@ -19,30 +27,40 @@ namespace Homework1
 
             builder.Services.AddHttpClient<ReqResClient>();
             builder.Services.AddHttpClient<JsonPlaceholderClient>();
-            // Add controllers
             builder.Services.AddControllers();
-
-            // Add Swagger for API documentation
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline
+            app.UseExceptionHandler(appError =>
+            {
+                appError.Run(async context =>
+                {
+                    var exception = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
+
+                    if (exception is InvalidOperationException)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                        await context.Response.WriteAsJsonAsync(new { message = "Validation failed." });
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                        await context.Response.WriteAsJsonAsync(new { message = "An unexpected error occurred." });
+                    }
+                });
+            });
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            // Use HTTPS redirection and authorization
             app.UseHttpsRedirection();
             app.UseAuthorization();
-
-            // Map controllers
             app.MapControllers();
-
-            // Run the application
             app.Run();
         }
     }
